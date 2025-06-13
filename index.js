@@ -25,9 +25,6 @@ io.on("connection", socket => {
     socket.on("join", data => {
         room = data.room
         name = data.name
-        console.log(socket.id, " Joined ", room);
-        console.log(rooms[room])
-
         socket.gameName = data.name
         if (!rooms[room]) { socket.emit('host') }
         rooms[room] = rooms[room] || [];
@@ -35,6 +32,9 @@ io.on("connection", socket => {
         let members = []
         rooms[room].forEach(e => { members.push({ id: e.id, name: e.gameName }) });
         rooms[room].forEach(e => { e.emit("members", members) });
+        
+        console.log(socket.id, " Joined ", room);
+        console.log(rooms[room])
     })
 
     //start
@@ -51,6 +51,7 @@ io.on("connection", socket => {
             }
         });
 
+        setTimeout(rooms[room].forEach(e => { e.emit("end") }),360000)
     })
 
 
