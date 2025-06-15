@@ -12,8 +12,9 @@
     <div class="votebox" style="display: none;">
         <form>
             <span></span>
+            <button type="submit" class="vote-button"
+                onsubmit="vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
         </form>
-        <button type="submit">vote</button>
     </div>
     <div class="chatbox">
         <div class="title">
@@ -192,6 +193,35 @@
     #send:hover {
         background-color: #218838;
     }
+
+    .votebox {
+        display: flex;
+        position: absolute;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+    }
+
+    .vote-button {
+        background-color: #4CAF50;
+        /* Green */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.3s;
+    }
+
+    .vote-button:hover {
+        background-color: #45a049;
+    }
 </style>
 <script>
 
@@ -243,6 +273,7 @@
     socket.on('topic', e => { document.querySelector('select').value = e })
     socket.on("msg", d => { document.querySelector(".main-chat").innerHTML += d })
     socket.on("word", e => { if (document.getElementById('topic-display')) { document.getElementById('topic-display').innerText = e } else { document.querySelector('.title').innerHTML += `<button id="topic-display">${e}</button>` } })
+    socket.on("end", () => { document.querySelector(".votebox").display = "flex" })
 
     //messaging system
     const post = (v) => { socket.emit("msg", `<div class="msg ${user}"><span class="user">${user}</span><span class="txt">${v}</span></div>`) }
@@ -264,6 +295,10 @@
             document.getElementById("chat").value = ""
             document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
         }
+    }
+
+    const vote = id => {
+        return false;
     }
 </script>
 
