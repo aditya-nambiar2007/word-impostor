@@ -1,4 +1,4 @@
-
+0
 const fs = require("fs")
 const http = require('http').createServer((req, res) => {
     fs.readFile("./index.html", function (error, content) {
