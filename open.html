@@ -10,10 +10,31 @@
 <body>
     <form method="get" action="https://invalid-editing-twelve-ken.trycloudflare.com">
         <input type="text" name="id" placeholder="NAME">
-        <input type="text" name="room"  placeholder="ROOM">
-        <input type="color" name="colour" id="">
+        <input type="text" name="room" placeholder="ROOM">
+
+        <select name="colour" id="colorSelect">
+            <option value="cyan" style="background-color: cyan; color: black;">Cyan</option>
+            <option value="coral" style="background-color: coral; color: black;">Coral</option>
+            <option value="khaki" style="background-color: khaki; color: black;">Khaki</option>
+            <option value="orchid" style="background-color: orchid; color: black;">Orchid</option>
+            <option value="gold" style="background-color: gold; color: black;">Gold</option>
+            <option value="silver" style="background-color: silver; color: black;">Silver</option>
+            <option value="lime" style="background-color: lime; color: black;">Lime</option>
+            <option value="orange" style="background-color: orange; color: black;">Orange</option>
+            <option value="magenta" style="background-color: magenta; color: black;">Magenta</option>
+            <option value="aquamarine" style="background-color: aquamarine; color: black;">Aquamarine</option>
+        </select>
         <button type="submit">GO></button>
     </form>
 </body>
-
+<script>
+    document.getElementById("colorSelect").onchange=e=>{e.target.style.backgroundColor=e.target.value}
+    document.forms[0].addEventListener("submit",e=>{
+        if (condition) {
+            e.preventDefault();
+        } else {
+            
+        }
+    })
+</script>
 </html>

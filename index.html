@@ -25,7 +25,7 @@
                 <option value="animals">Animals</option>
                 <option value="flowers">Flowers</option>
                 <option value="numbers">Numbers</option>
-                <option vallue="sports">Sports</option>
+                <option value="sports">Sports</option>
             </select>
         </div>
         <div class="content">
@@ -249,7 +249,7 @@
         let txt = ''
         members = m;
         members.forEach(e => {
-            txt += `<div id="g${e.id}"><span class="name">${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
+            txt += `<div id="g${e.id}"><span class="name" style="color:${colour};">${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
         }
         );
         document.querySelector('.dms').innerHTML = txt
@@ -275,16 +275,31 @@
     socket.on("msg", d => { document.querySelector(".main-chat").innerHTML += d })
     socket.on("word", e => { if (document.getElementById('topic-display')) { document.getElementById('topic-display').innerText = e } else { document.querySelector('.title').innerHTML += `<button id="topic-display">${e}</button>` } })
     socket.on("end", () => { document.querySelector(".votebox").display = "flex" })
+    socket.on("time", t=>{setInterval(() => {t--}, 1000);document.querySelector('select').disabled=true;   document.querySelector('select').value=`${Math.floor(t/60)} : ${t%60}`    } )
+    socket.on("error", n => {
+        switch (n) {
+            case 0:
+                alert("The Game Started")
+                break;
+
+            case 1:
+                alert("Can't start a game with 4 players or less")
+                break;
+
+            default:
+                break;
+        }
+    })
 
     //messaging system
-    const post = (v) => { socket.emit("msg", `<div class="msg ${user}"><span class="user">${user}</span><span class="txt">${v}</span></div>`) }
+    const post = (v) => { socket.emit("msg", `<div class="msg ${user}"><span class="user" style="color:${colour};">${user}</span><span class="txt">${v}</span></div>`) }
 
     document.getElementById("send").onclick = e => {
         //dms
         if (document.querySelector("#dm").getAttribute('checked') == 'true' && dms) {
             let users = []
             document.querySelectorAll('input[type="checkbox"]:checked').forEach(e => { users.push(e.getAttribute('name')) })
-            socket.emit("dm", { users: users, msg: `<div class="msg ${user} dm"><span class="user">${user} <font style="color:red;float:right" size="-0.5">Direct Message...!</font></span><span class="txt">${document.getElementById("chat").value}</span></div>` })
+            socket.emit("dm", { users: users, msg: `<div class="msg ${user} dm" ><span class="user" style="color:${colour};>${user} <font style="color:red;float:right" size="-0.5">Direct Message...!</font></span><span class="txt">${document.getElementById("chat").value}</span></div>` })
             document.getElementById("chat").value = ""
             document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
             dms--
