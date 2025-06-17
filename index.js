@@ -35,7 +35,7 @@ const io = require("socket.io")(http, { cors: { origin: "*" } });
 let rooms = {};
 let sockets = {};
 let odds = {};
-let i=0;
+let i = 0;
 
 io.on("connection", (socket) => {
   //connection:
@@ -60,8 +60,6 @@ io.on("connection", (socket) => {
     rooms[room].forEach((e) => {
       e.emit("members", members);
     });
-
-    
   });
 
   //start
@@ -70,7 +68,27 @@ io.on("connection", (socket) => {
       e.emit("topic", str);
     });
   });
+  function permshift() {
+    console.log(i);
+    if (rooms[room][i] != "going") {
+      rooms[room][i].emit("perm", () => {});
+      
+    }
 
+    if (i < rooms[room].length) {
+      setTimeout(() => {
+        i++;
+        if (rooms[room][i-1] != "going") {
+            rooms[room][i-1].emit("permn", () => {});
+            
+          }
+        permshift();
+      }, 2000);
+
+     
+
+    }
+  }
   socket.on("start", (topic) => {
     if (rooms[room].length > 4) {
       rooms[room].push("going");
@@ -87,13 +105,7 @@ io.on("connection", (socket) => {
           }
         }
       });
-      rooms[room].forEach(async (e,index) => {
-        socket.emit("perm", () => {
-          i=index;
-          
-        });
-        await setTimeout(() => {}, 2000);
-      });
+      permshift();
 
       setTimeout(rooms[room].forEach, 60000 * rooms[room].length, (e) => {
         e.emit("end");
@@ -105,7 +117,6 @@ io.on("connection", (socket) => {
 
   //message
   socket.on("msg", (data) => {
-    
     if (socket == rooms[room][i]) {
       rooms[room].forEach((e) => {
         if (e != "going") {
@@ -139,7 +150,6 @@ io.on("connection", (socket) => {
         // members is not defined here idk what you tryna do
       });
       delete sockets[socket.id];
-     
     }
   });
 });

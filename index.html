@@ -333,6 +333,10 @@
         document.querySelector("#perm").innerText="You can talk in main chat now"
 
     })
+    socket.on("permn",()=> {
+        document.querySelector("#perm").innerText=""
+
+    })
     socket.on("error", n => {
         switch (n) {
             case 0:
