@@ -15,8 +15,7 @@
         <form>
             <span></span>
             <!-- Vote button, triggers vote function on submit -->
-            <button type="submit" class="vote-button"
-                onsubmit="vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
+            <button type="submit" class="vote-button"   onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
         </form>
     </div>
     <!-- Main chatbox UI -->
@@ -246,6 +245,14 @@
     .vote-button:hover {
         background-color: #45a049;
     }
+    .ani{
+        animation: ani 1s 1;
+    }
+
+    @keyframes ani {
+        from{right: 0;}
+        to{left: 0;}
+    }
 </style>
 <script>
 
@@ -287,7 +294,7 @@
         members = m;
         // Render member list for DM, and as voting options
         members.forEach(e => {
-            txt += `<div id="g${e.id}"><span class="name" style="color:${colour};">${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
+            txt += `<div id="g${e.id}"><span class="name" >${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
         }
         );
         document.querySelector('.dms').innerHTML = txt
@@ -320,7 +327,7 @@
     // Show voting box at end of game
     socket.on("end", () => { document.querySelector(".votebox").display = "flex" })
     // Countdown timer handling, disables topic select during round
-    socket.on("time", t=>{setInterval(() => {t--}, 1000);document.querySelector('select').disabled=true;   document.querySelector('select').value=`${Math.floor(t/60)} : ${t%60}`    } )
+    socket.on("time", t=>{document.querySelector(".title").innerHTML+=`<div id="count"></div>`;   document.querySelector('select').hidden=true;setInterval(() => {t--;document.querySelector('select').disabled=true; document.querySelector("#count").innerText=t%60<10?`${Math.floor(t/60)} : 0${t%60}`:`${Math.floor(t/60)} : ${t%60}` }, 1000)   } )
     // Error handling (game start issues)
     socket.on("error", n => {
         switch (n) {
@@ -336,6 +343,11 @@
                 break;
         }
     })
+    //  Handle voting system
+    socket.on("votes",v=>{
+        for (const key in v) {document.getElementsByName(key)[0].innerHTML+="<span class='ani'>&#128529;</span>"}
+        }
+    )
 
     // MESSAGING SYSTEM
 
@@ -367,6 +379,7 @@
 
     // Placeholder vote function
     const vote = id => {
+        socket.emit("vote",id)
         return false;
     }
 </script>
