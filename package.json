@@ -1,0 +1,24 @@
+{
+  "name": "word-impostor",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/aditya-nambiar2007/word-impostor#readme",
+  "bugs": {
+    "url": "https://github.com/aditya-nambiar2007/word-impostor/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aditya-nambiar2007/word-impostor.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js "
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {}
+}
