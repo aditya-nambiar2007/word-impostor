@@ -69,16 +69,17 @@ io.on("connection", (socket) => {
     });
   });
   function permshift() {
-    console.log(i);
+    
     if (rooms[room][i] != "going") {
       rooms[room][i].emit("perm", () => {});
       
     }
 
-    if (i < rooms[room].length) {
+    if (i < rooms[room].length-2) {
       setTimeout(() => {
         i++;
         if (rooms[room][i-1] != "going") {
+
             rooms[room][i-1].emit("permn", () => {});
             
           }
