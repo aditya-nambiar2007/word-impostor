@@ -46,6 +46,7 @@ let rooms = {}
 let sockets = {}
 let odds = {}
 let votes = {}
+let messages={}
 io.on("connection", socket => {
     // Store connected socket
     sockets[socket.id] = socket
@@ -73,7 +74,7 @@ io.on("connection", socket => {
     // Handle game start event
     socket.on("start", (topic) => {
         if (rooms[room].length > 4) { // Minimum players required
-            rooms[room].push("going") 
+            //rooms[room].push("going") 
             // Mark the room as in-game
             // Randomly select one player as the "impostor" (odd one out)
             odds[room] = rooms[room][Math.floor(Math.random() * rooms[room].length)]
@@ -88,7 +89,8 @@ io.on("connection", socket => {
                         e.emit("word", words[1])
                     }
                     e.emit("time", 60 * rooms[room].length)
-
+                    messages[room]=0;
+                    socket.emit("chance")
                 } catch (error) {
                 }
 
@@ -100,6 +102,11 @@ io.on("connection", socket => {
             // Not enough players to start
             socket.emit("error", 1)
         }
+    })
+    //Chance handling
+    socket.on("chance" ,()=>{
+        messages[room]++;
+        rooms[room][messages[room]%rooms[room].length].emit("chance")
     })
 
     // Broadcast chat messages to all members in the room
