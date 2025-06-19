@@ -73,7 +73,7 @@ io.on("connection", socket => {
 
     // Handle game start event
     socket.on("start", (topic) => {
-        if (rooms[room].length > 4) { // Minimum players required
+        if (rooms[room].length > 3) { // Minimum players required
             //rooms[room].push("going") 
             // Mark the room as in-game
             // Randomly select one player as the "impostor" (odd one out)
