@@ -15,7 +15,8 @@
         <form>
             <span></span>
             <!-- Vote button, triggers vote function on submit -->
-            <button type="submit" class="vote-button"   onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
+            <button type="submit" class="vote-button"
+                onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
         </form>
     </div>
     <!-- Main chatbox UI -->
@@ -245,21 +246,27 @@
     .vote-button:hover {
         background-color: #45a049;
     }
-    .ani{
+
+    .ani {
         animation: ani 1s 1;
     }
 
     @keyframes ani {
-        from{right: 0;}
-        to{left: 0;}
+        from {
+            right: 0;
+        }
+
+        to {
+            left: 0;
+        }
     }
 </style>
 <script>
 
     // Number of DMs left, chat variable (unused)
     let dms = 5
-    let chat = 0
-
+    let chat=true
+    let timeout;
     // Connect to socket server
     const socket = io("http://localhost:8080");
 
@@ -278,13 +285,8 @@
     // Allow sending message on Enter key
     document.onkeyup = e => { if (e.key == "Enter") { document.getElementById("send").click(); } }
 
-    // Toggle DM button attribute when clicked
-    document.querySelector("#dm").addEventListener('click', () => {
-        if (document.querySelector("#dm").getAttribute("checked") == 'true') { document.querySelector("#dm").setAttribute("checked", 'false') }
-        else { document.querySelector("#dm").setAttribute("checked", 'true') }
-    })
     // SOCKET.IO EVENTS
-
+    
     // Join game room, send user and room info to server
     socket.emit("join", { room: room, name: user })
 
@@ -327,7 +329,9 @@
     // Show voting box at end of game
     socket.on("end", () => { document.querySelector(".votebox").display = "flex" })
     // Countdown timer handling, disables topic select during round
-    socket.on("time", t=>{document.querySelector(".title").innerHTML+=`<div id="count"></div>`;   document.querySelector('select').hidden=true;setInterval(() => {t--;document.querySelector('select').disabled=true; document.querySelector("#count").innerText=t%60<10?`${Math.floor(t/60)} : 0${t%60}`:`${Math.floor(t/60)} : ${t%60}` }, 1000)   } )
+    socket.on("time", t => { document.querySelector(".title").innerHTML += `<div id="count"></div>`; document.querySelector('select').hidden = true; setInterval(() => { t--; document.querySelector('select').disabled = true; document.querySelector("#count").innerText = t % 60 < 10 ? `${Math.floor(t / 60)} : 0${t % 60}` : `${Math.floor(t / 60)} : ${t % 60}` }, 1000) })
+    //Chance system
+    socket.on("chance", t => { chat = false ;timeout = setTimeout(() => { chat = true ; socket.emit("chance")},60000) })
     // Error handling (game start issues)
     socket.on("error", n => {
         switch (n) {
@@ -335,7 +339,7 @@
                 alert("The Game Started")
                 break;
 
-            case 1:
+                case 1:
                 alert("Can't start a game with 4 players or less")
                 break;
 
@@ -344,16 +348,16 @@
         }
     })
     //  Handle voting system
-    socket.on("votes",v=>{
-        for (const key in v) {document.getElementsByName(key)[0].innerHTML+="<span class='ani'>&#128529;</span>"}
-        }
+    socket.on("votes", v => {
+        for (const key in v) { document.getElementsByName(key)[0].innerHTML += "<span class='ani'>&#128529;</span>" }
+    }
     )
 
     // MESSAGING SYSTEM
 
     // Send message to server to broadcast to all
     const post = (v) => { socket.emit("msg", `<div class="msg ${user}"><span class="user" style="color:${colour};">${user}</span><span class="txt">${v}</span></div>`) }
-
+    
     document.getElementById("send").onclick = e => {
         // If DM toggle is on and DMs remain
         if (document.querySelector("#dm").getAttribute('checked') == 'true' && dms) {
@@ -361,7 +365,7 @@
             // Get all checked users for DM
             document.querySelectorAll('input[type="checkbox"]:checked').forEach(e => { users.push(e.getAttribute('name')) })
             // Send DM to selected users
-            socket.emit("dm", { users: users, msg: `<div class="msg ${user} dm" ><span class="user" style="color:${colour};>${user} <font style="color:red;float:right" size="-0.5">Direct Message.</font></span><span class="txt">${document.getElementById("chat").value}</span></div>` })
+            socket.emit("dm", { users: users, msg: `<div class="msg ${user} dm" ><span class="user" style="color:${colour};">${user} <font style="color:red;float:right" size="-0.5">Direct Message.</font></span><span class="txt">${document.getElementById("chat").value}</span></div>` })
             document.getElementById("chat").value = ""
             // Scroll chat to newest message
             document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
@@ -372,16 +376,35 @@
         // Otherwise, send normal chat message
         else {
             post(document.getElementById("chat").value)
+            //Clear Chat-box
             document.getElementById("chat").value = ""
+            // Scroll chat to newest message
             document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
+            socket.emit("chance")
+            chat=false
+            clearTimeout(timeout)
         }
     }
 
     // Placeholder vote function
     const vote = id => {
-        socket.emit("vote",id)
+        socket.emit("vote", id)
         return false;
     }
+    
+    //Chatbox controller
+    setInterval(() => {
+        if (document.querySelector("#dm").getAttribute('checked') == 'true') {
+            document.getElementById("chat").disabled=false
+        } else {
+            document.getElementById("chat").disabled=chat
+        }
+    }, 1);
+// Toggle DM button attribute when clicked
+document.querySelector("#dm").addEventListener('click', () => {
+    if (document.querySelector("#dm").getAttribute("checked") == 'true') { document.querySelector("#dm").setAttribute("checked", 'false') }
+    else { document.querySelector("#dm").setAttribute("checked", 'true') }
+})
 </script>
 
 </html>
