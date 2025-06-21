@@ -15,15 +15,14 @@
         <form>
             <span></span>
             <!-- Vote button, triggers vote function on submit -->
-            <button type="submit" class="vote-button"
-                onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
+            <button type="submit" class="vote-button" onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
         </form>
     </div>
     <!-- Main chatbox UI -->
     <div class="chatbox">
         <div class="title">
             <!-- DM switch -->
-            <div id="dm" checked="true" style=" font-size: 7vh;padding: 5px;transition: all 0.2s;">DM</div>
+            <div id="dm" checked="true" style=" font-size: 7vh;padding: 5px;transition: all 0.2s;" onclick=" if (document.querySelector(`#dm`).getAttribute(`checked`) == 'true') { document.querySelector(`#dm`).setAttribute(`checked`, 'false') }else { document.querySelector(`#dm`).setAttribute(`checked`, 'true') }">DM</div>
             <!-- Topic selector, disabled by default (only host can enable) -->
             <select id="topic" disabled="true"
                 style=" color: black; border-radius: 2px;   background-color: rgba(255, 255, 255, 1);   border-color: rgba(0, 0, 0, 1);    opacity: 1;">
@@ -267,14 +266,16 @@
     let dms = 5
     let chat=true
     let timeout;
-    // Connect to socket server
-    const socket = io("http://localhost:8080");
-
     // Get parameters from URL
     const params = new URLSearchParams(location.search)
     const user = params.get("id")
     const room = params.get("room")
     const colour = params.get("colour")
+    //Change Location If entered room incorrectly
+    if (!(!!user&!!room&!!colour)) {location.replace("/join")}
+    // Connect to socket server
+    else{
+    const socket = io("http://localhost:8080");
 
     // Add a dynamic style for this user's messages (align to end)
     document.querySelector('style').innerText += `.${user}{align-self: end;}`
@@ -400,11 +401,9 @@
             document.getElementById("chat").disabled=chat
         }
     }, 1);
+    }
+
 // Toggle DM button attribute when clicked
-document.querySelector("#dm").addEventListener('click', () => {
-    if (document.querySelector("#dm").getAttribute("checked") == 'true') { document.querySelector("#dm").setAttribute("checked", 'false') }
-    else { document.querySelector("#dm").setAttribute("checked", 'true') }
-})
 </script>
 
 </html>
