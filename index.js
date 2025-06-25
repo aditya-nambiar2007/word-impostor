@@ -1,21 +1,21 @@
-// Import required modules
+
 const fs = require("fs")
 const url = require('url')
 
-// Create an HTTP server
+
 const http = require('http').createServer((req, res) => {
-    // Handle request to join a room
+
     if (req.url == "/join") {
         fs.readFile("./open.html", function (error, content) {
             res.writeHead(200, { 'Content-Type': "text/html" });
             res.end(content, 'utf-8');
         })
     }
-    // Handle request to check if a room is available
+
     else if (req.path == "/room") {
         let response;
         try {
-            response = rooms[room][-1] != "going"
+            response = db.read(room)[-1] != "going"
         } catch (error) {
             response = true
         }
@@ -23,7 +23,7 @@ const http = require('http').createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': "text/html" });
         res.end(response, 'utf-8');
     }
-    // Serve the main index.html for all other requests
+
     else {
         fs.readFile("./index.html", function (error, content) {
             res.writeHead(200, { 'Content-Type': "text/html" });
@@ -32,113 +32,118 @@ const http = require('http').createServer((req, res) => {
     }
 })
 
-// Import topics from external file
-const topics = require("./dat.js")
 
-// Function to shuffle an array
+const topics = require("./JS/dat.js")
+const db = require("./JS/db.js")
+
 const array_sort = (array) => { return array.slice().sort(() => 0.5 - Math.random()) }
 
-// Set up Socket.io for real-time communication
+
 const io = require('socket.io')(http, { cors: { origin: "*" } });
 
-// In-memory storage for rooms, sockets, and odd player assignment
-let rooms = {}
+
 let sockets = {}
 let odds = {}
 let votes = {}
-let messages={}
+let messages = {}
 io.on("connection", socket => {
-    // Store connected socket
+
     sockets[socket.id] = socket
     let room, name;
 
-    // Handle join event: add player to a room
+
     socket.on("join", data => {
         room = data.room
         name = data.name
-        socket.gameName = data.name
-        if (!rooms[room]) { socket.emit('host') } // Notify if user is host (first in room)
-        rooms[room] = rooms[room] || []
-        rooms[room].push(socket)
-        // Build a list of members in the room
-        let members = []
-        rooms[room].forEach(e => { members.push({ id: e.id, name: e.gameName }) })
-        // Notify all members of the updated member list
-        rooms[room].forEach(e => { e.emit("members", members) })
 
+        db.db.query(`BEGIN TRY
+                    SELECT TOP 1 * FROM ${room};
+                    PRINT 1
+                    END TRY
+                    BEGIN CATCH
+                    PRINT 0
+                    END CATCH`,
+            (err, res, fields) => {
+                if (!res) { socket.emit('host') }
+                else {
+                    sockets[socket.id] = socket
+                    db.insert(socket.id, false, name, room)
+
+                    let members = []
+                    db.read(room).forEach(e => { members.push({ id: e.sid, name: e.name }) })
+
+                    db.read(room).forEach(e => { sockets[e.sid].emit("members", members) })
+
+
+                    
+                }
+            })
     })
 
-    // Broadcast topic selection to all members in the room
-    socket.on("topic", str => { rooms[room].forEach(e => { e.emit("topic", str) }) })
 
-    // Handle game start event
+    socket.on("topic", str => { db.read(room).forEach(e => { sockets[e.sid].emit("topic", str) }) })
+
+
     socket.on("start", (topic) => {
-        if (rooms[room].length > 3) { // Minimum players required
-            //rooms[room].push("going") 
-            // Mark the room as in-game
-            // Randomly select one player as the "impostor" (odd one out)
-            odds[room] = rooms[room][Math.floor(Math.random() * rooms[room].length)]
-            // Shuffle topic words
+        if (db.read(room).length > 3) {
+            odds[room] = db.read(room)[Math.floor(Math.random() * db.read(room).length)]
+
             let words = array_sort(topics[topic])
-            // Assign words and timer to each player
-            rooms[room].forEach(e => {
+
+            db.read(room).forEach(e => {
                 try {
                     if (e == odds[room]) {
-                        e.emit("word", words[0])
+                        sockets[e.sid].emit("word", words[0])
                     } else {
-                        e.emit("word", words[1])
+                        sockets[e.sid].emit("word", words[1])
                     }
-                    e.emit("time", 60 * rooms[room].length)
-                    messages[room]=0;
+                    sockets[e.sid].emit("time", 60 * db.read(room).length)
+                    messages[room] = 0;
                     socket.emit("chance")
                 } catch (error) {
                 }
 
             })
-            // End the game after a set time
-            setTimeout(rooms[room].forEach, 60000 * rooms[room].length, e => { e.emit("end"); votes[room][e.id] = 0 })
-            setTimeout(rooms[room].forEach, 60000 * rooms[room].length + 60000, e => { e.emit("votes", votes[room]) })
+
+            setTimeout(db.read(room).forEach, 60000 * db.read(room).length, e => { sockets[e.sid].emit("end"); votes[room][e.id] = 0 })
+            setTimeout(db.read(room).forEach, 60000 * db.read(room).length + 60000, e => { sockets[e.sid].emit("votes", votes[room], odds[room]) })
         } else {
-            // Not enough players to start
+
             socket.emit("error", 1)
         }
     })
-    //Chance handling
-    socket.on("chance" ,()=>{
+
+    socket.on("chance", () => {
         messages[room]++;
-        rooms[room][messages[room]%rooms[room].length].emit("chance")
+        db.read(room)[messages[room] % db.read(room).length].emit("chance")
     })
 
-    // Broadcast chat messages to all members in the room
+
     socket.on("msg", data => {
-        rooms[room].forEach(e => { e.emit("msg", data) })
+        db.read(room).forEach(e => { sockets[e.sid].emit("msg", data) })
     })
 
-    // Direct messages to selected users
+
     socket.on("dm", d => {
         d.users.forEach(element => {
             sockets[element].emit("msg", d.msg)
         })
     })
 
-    //Handle votes
+
     socket.on("vote", id => { votes[room][id]++ })
 
-    // Handle user disconnect
+
     socket.on("disconnect", () => {
-        // Remove the socket from the room
-        if (rooms[room].indexOf(socket) > -1) {
-            rooms[room].splice(rooms[room].indexOf(socket), 1)
-        }
-        // Delete the room if empty
-        if (rooms[room].length == 0) { delete rooms[room] }
-        // Notify remaining members of the updated member list
-        rooms[room].forEach(e => { e.emit("members", members) })
+
+        db.delete(socket.id, room);
+
+        db.read(room).forEach(e => { sockets[e.sid].emit("members", members) })
         delete sockets[socket.id]
         console.log(socket.id, " Left ", room)
-        console.log(rooms[room])
+        console.log(db.read(room))
     })
 })
 
-// Start listening on port 8080
+
 http.listen(8080, "0.0.0.0")
