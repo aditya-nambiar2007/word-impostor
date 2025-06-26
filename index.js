@@ -64,7 +64,7 @@ io.on("connection", socket => {
                     PRINT 0
                     END CATCH`,
             (err, res, fields) => {
-                if (!res) { socket.emit('host') }
+                if (!res) { socket.emit('host');db.create_room(room);db.insert(socket.id,false,name,room) }
                 else {
                     sockets[socket.id] = socket
                     db.insert(socket.id, false, name, room)
