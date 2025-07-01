@@ -56,28 +56,20 @@ io.on("connection", socket => {
         room = data.room
         name = data.name
 
-        db.db.query(`BEGIN TRY
-                    SELECT TOP 1 * FROM ${room};
-                    PRINT 1
-                    END TRY
-                    BEGIN CATCH
-                    PRINT 0
-                    END CATCH`,
-            (err, res, fields) => {
-                if (!res) { socket.emit('host');db.create_room(room);db.insert(socket.id,false,name,room) }
+        let res=db.read(room);
+                if (!res) { socket.emit('host');db.create_room(room);db.insert(socket.id,0,name,room) }
                 else {
                     sockets[socket.id] = socket
-                    db.insert(socket.id, false, name, room)
+                    db.insert(socket.id, 0, name, room)
 
                     let members = []
                     db.read(room).forEach(e => { members.push({ id: e.sid, name: e.name }) })
 
                     db.read(room).forEach(e => { sockets[e.sid].emit("members", members) })
 
-
                     
                 }
-            })
+            
     })
 
 
