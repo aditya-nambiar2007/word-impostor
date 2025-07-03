@@ -12,17 +12,17 @@ const http = require('http').createServer((req, res) => {
         })
     }
 
-    // else if (req.path == "/room") {
-    //     let response;
-    //     try {
-    //         response = db.read(room)[-1] != "going"
-    //     } catch (error) {
-    //         response = true
-    //     }
-    //     const room = url.parse(req.url, true).query["room"]
-    //     res.writeHead(200, { 'Content-Type': "text/html" });
-    //     res.end(response, 'utf-8');
-    // }
+    /*else if (req.path == "/room") {
+        let response;
+        try {
+            response = db.read(room)[-1] != "going"
+        } catch (error) {
+            response = true
+        }
+        const room = url.parse(req.url, true).query["room"]
+        res.writeHead(200, { 'Content-Type': "text/html" });
+        res.end(response, 'utf-8');
+    }*/
 
     else {
         fs.readFile("./index.html", function (error, content) {
