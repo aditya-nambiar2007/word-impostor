@@ -15,14 +15,17 @@
         <form>
             <span></span>
             <!-- Vote button, triggers vote function on submit -->
-            <button type="submit" class="vote-button" onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
+            <button type="submit" class="vote-button"
+                onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
         </form>
     </div>
     <!-- Main chatbox UI -->
     <div class="chatbox">
         <div class="title">
             <!-- DM switch -->
-            <div id="dm" checked="true" style=" font-size: 7vh;padding: 5px;transition: all 0.2s;" onclick=" if (document.querySelector(`#dm`).getAttribute(`checked`) == 'true') { document.querySelector(`#dm`).setAttribute(`checked`, 'false') }else { document.querySelector(`#dm`).setAttribute(`checked`, 'true') }">DM</div>
+            <button id="dm" checked="true" onclick=handledm()>
+                <div style=" font-size: 7vh;padding: 5px;transition: all 0.2s;">DM</div>
+            </button>
             <!-- Topic selector, disabled by default (only host can enable) -->
             <select id="topic" disabled="true"
                 style=" color: black; border-radius: 2px;   background-color: rgba(255, 255, 255, 1);   border-color: rgba(0, 0, 0, 1);    opacity: 1;">
@@ -264,146 +267,150 @@
 
     // Number of DMs left, chat variable (unused)
     let dms = 5
-    let chat=true
+    let chat = true
     let timeout;
     // Get parameters from URL
     const params = new URLSearchParams(location.search)
     const user = params.get("id")
     const room = params.get("room")
     const colour = params.get("colour")
+    //Handling Direct Messaging Button
+    function handledm() {
+        if (document.querySelector("#dm").getAttribute("checked") == 'true') { document.querySelector("#dm").setAttribute("checked", 'false') }
+        else { document.querySelector("#dm").setAttribute("checked", 'true') }
+    }
     //Change Location If entered room incorrectly
-    if (!(!!user&!!room&!!colour)) {location.replace("/join")}
+    if (!(!!user & !!room & !!colour)) { location.replace("/join") }
     // Connect to socket server
     else{
-    const socket = io("http://localhost:8080");
+    const socket = io(location.href);
 
-    // Add a dynamic style for this user's messages (align to end)
-    document.querySelector('style').innerText += `.${user}{align-self: end;}`
+        // Add a dynamic style for this user's messages (align to end)
+        document.querySelector('style').innerText += `.${user}{align-self: end;}`
 
-    // Array to hold member info
-    let members = []
+        // Array to hold member info
+        let members = []
 
-    // Allow sending message on Enter key
-    document.onkeyup = e => { if (e.key == "Enter") { document.getElementById("send").click(); } }
+        // Allow sending message on Enter key
+        document.onkeyup = e => { if (e.key == "Enter") { document.getElementById("send").click(); } }
 
-    // SOCKET.IO EVENTS
-    
-    // Join game room, send user and room info to server
-    socket.emit("join", { room: room, name: user })
+        // SOCKET.IO EVENTS
 
-    // Receive members list from server
-    socket.on("members", m => {
-        let txt = ''
-        members = m;
-        // Render member list for DM, and as voting options
-        members.forEach(e => {
-            txt += `<div id="g${e.id}"><span class="name" >${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
-        }
-        );
-        document.querySelector('.dms').innerHTML = txt
-        document.querySelector('.votebox>form').innerHTML = txt.replace("checkbox", "radio")
-        // Make user's own radio checked and disabled for voting
-        document.getElementsByName(socket.id)[1].checked = true;
-        document.getElementsByName(socket.id)[1].disabled = true;
-    })
+        // Join game room, send user and room info to server
+        socket.emit("join", { room: room, name: user })
 
-    // If host, enable topic selector and add start button
-    socket.on('host', () => {
-        document.querySelector('select').disabled = false
-        document.querySelector('.title').innerHTML += '<button onclick="socket.emit(`start`,document.querySelector(\'select\').value);this.hidden=true">START ></button>';
-        // Send topic changes to server
-        document.querySelector('select').onchange = () => {
-            socket.emit("topic", document.querySelector('select').value)
-        }
-        // DM toggle for host
-        document.querySelector("#dm").addEventListener('click', () => {
-            if (document.querySelector("#dm").getAttribute("checked") == 'true') { document.querySelector("#dm").setAttribute("checked", 'false') }
-            else { document.querySelector("#dm").setAttribute("checked", 'true') }
+        // Receive members list from server
+        socket.on("members", m => {
+            let txt = ''
+            members = m;
+            // Render member list for DM, and as voting options
+            members.forEach(e => {
+                txt += `<div id="g${e.id}"><span class="name" >${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
+            }
+            );
+            document.querySelector('.dms').innerHTML = txt
+            document.querySelector('.votebox>form').innerHTML = txt.replace("checkbox", "radio")
+            // Make user's own radio checked and disabled for voting
+            document.getElementsByName(socket.id)[1].checked = true;
+            document.getElementsByName(socket.id)[1].disabled = true;
         })
-    })
-    // Update topic display from server
-    socket.on('topic', e => { document.querySelector('select').value = e })
-    // Display new chat message
-    socket.on("msg", d => { document.querySelector(".main-chat").innerHTML += d })
-    // Show word to impostor, or topic button
-    socket.on("word", e => { if (document.getElementById('topic-display')) { document.getElementById('topic-display').innerText = e } else { document.querySelector('.title').innerHTML += `<button id="topic-display">${e}</button>` } })
-    // Show voting box at end of game
-    socket.on("end", () => { document.querySelector(".votebox").display = "flex" })
-    // Countdown timer handling, disables topic select during round
-    socket.on("time", t => { document.querySelector(".title").innerHTML += `<div id="count"></div>`; document.querySelector('select').hidden = true; setInterval(() => { t--; document.querySelector('select').disabled = true; document.querySelector("#count").innerText = t % 60 < 10 ? `${Math.floor(t / 60)} : 0${t % 60}` : `${Math.floor(t / 60)} : ${t % 60}` }, 1000) })
-    //Chance system
-    socket.on("chance", t => { chat = false ;timeout = setTimeout(() => { chat = true ; socket.emit("chance")},60000) })
-    // Error handling (game start issues)
-    socket.on("error", n => {
-        switch (n) {
-            case 0:
-                alert("The Game Started")
-                break;
+
+        // If host, enable topic selector and add start button
+        socket.on('host', () => {
+            document.querySelector('select').disabled = false
+            document.querySelector('.title').innerHTML += '<button id="start" onclick="this.hidden=true">START ></button>';
+            document.getElementById("start").onclick=()=>{socket.emit(`start`,document.querySelector('select').value)}
+            // Send topic changes to server
+            document.querySelector('select').onchange = () => {
+                socket.emit("topic", document.querySelector('select').value)
+            }
+        })
+        // Update topic display from server
+        socket.on('topic', e => { document.querySelector('select').value = e })
+        // Display new chat message
+        socket.on("msg", d => { document.querySelector(".main-chat").innerHTML += d })
+        // Show word to impostor, or topic button
+        socket.on("word", e => { if (document.getElementById('topic-display')) { document.getElementById('topic-display').innerText = e } else { document.querySelector('.title').innerHTML += `<button id="topic-display">${e}</button>` } })
+        // Show voting box at end of game
+        socket.on("end", () => { document.querySelector(".votebox").display = "flex" })
+        // Countdown timer handling, disables topic select during round
+        socket.on("time", t => { document.querySelector(".title").innerHTML += `<div id="count"></div>`; document.querySelector('select').hidden = true; setInterval(() => { t--; document.querySelector('select').disabled = true; document.querySelector("#count").innerText = t % 60 < 10 ? `${Math.floor(t / 60)} : 0${t % 60}` : `${Math.floor(t / 60)} : ${t % 60}` }, 1000) })
+        //Chance system
+        socket.on("chance", t => { chat = false; timeout = setTimeout(() => { chat = true; socket.emit("chance") }, 60000) })
+        socket.on("votes", (votes, impostor) => {
+            votes
+        })
+        // Error handling (game start issues)
+        socket.on("error", n => {
+            switch (n) {
+                case 0:
+                    alert("The Game Started")
+                    break;
 
                 case 1:
-                alert("Can't start a game with 3 players or less")
-                break;
+                    alert("Can't start a game with 3 players or less")
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
+            }
+        })
+        //  Handle voting system
+        socket.on("votes", v => {
+            for (const key in v) { document.getElementsByName(key)[0].innerHTML += "<span class='ani'>&#128529;</span>" }
         }
-    })
-    //  Handle voting system
-    socket.on("votes", v => {
-        for (const key in v) { document.getElementsByName(key)[0].innerHTML += "<span class='ani'>&#128529;</span>" }
-    }
-    )
+        )
 
-    // MESSAGING SYSTEM
+        // MESSAGING SYSTEM
 
-    // Send message to server to broadcast to all
-    const post = (v) => { socket.emit("msg", `<div class="msg ${user}"><span class="user" style="color:${colour};">${user}</span><span class="txt">${v}</span></div>`) }
-    
-    document.getElementById("send").onclick = e => {
-        // If DM toggle is on and DMs remain
-        if (document.querySelector("#dm").getAttribute('checked') == 'true' && dms) {
-            let users = []
-            // Get all checked users for DM
-            document.querySelectorAll('input[type="checkbox"]:checked').forEach(e => { users.push(e.getAttribute('name')) })
-            // Send DM to selected users
-            socket.emit("dm", { users: users, msg: `<div class="msg ${user} dm" ><span class="user" style="color:${colour};">${user} <font style="color:red;float:right" size="-0.5">Direct Message.</font></span><span class="txt">${document.getElementById("chat").value}</span></div>` })
-            document.getElementById("chat").value = ""
-            // Scroll chat to newest message
-            document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
-            dms--
+        // Send message to server to broadcast to all
+        const post = (v) => { socket.emit("msg", `<div class="msg ${user}"><span class="user" style="color:${colour};">${user}</span><span class="txt">${v}</span></div>`) }
+
+        document.getElementById("send").onclick = e => {
+            // If DM toggle is on and DMs remain
+            if (document.querySelector("#dm").getAttribute('checked') == 'true' && dms) {
+                let users = []
+                // Get all checked users for DM
+                document.querySelectorAll('input[type="checkbox"]:checked').forEach(e => { users.push(e.getAttribute('name')) })
+                // Send DM to selected users
+                socket.emit("dm", { users: users, msg: `<div class="msg ${user} dm" ><span class="user" style="color:${colour};">${user} <font style="color:red;float:right" size="-0.5">Direct Message.</font></span><span class="txt">${document.getElementById("chat").value}</span></div>` })
+                document.getElementById("chat").value = ""
+                // Scroll chat to newest message
+                document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
+                dms--
+            }
+            // If out of DMs, alert user
+            else if (document.querySelector("#dm").getAttribute('checked') == 'true' && !dms) { alert("EXHAUSTED DMS") }
+            // Otherwise, send normal chat message
+            else {
+                post(document.getElementById("chat").value)
+                //Clear Chat-box
+                document.getElementById("chat").value = ""
+                // Scroll chat to newest message
+                document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
+                socket.emit("chance")
+                chat = false
+                clearTimeout(timeout)
+            }
         }
-        // If out of DMs, alert user
-        else if (document.querySelector("#dm").getAttribute('checked') == 'true' && !dms) { alert("EXHAUSTED DMS") }
-        // Otherwise, send normal chat message
-        else {
-            post(document.getElementById("chat").value)
-            //Clear Chat-box
-            document.getElementById("chat").value = ""
-            // Scroll chat to newest message
-            document.querySelector(".main-chat").scrollTo(0, document.querySelector(".main-chat").scrollHeight);
-            socket.emit("chance")
-            chat=false
-            clearTimeout(timeout)
+
+        // Placeholder vote function
+        const vote = id => {
+            socket.emit("vote", id)
+            return false;
         }
+
+        //Chatbox controller
+        setInterval(() => {
+            if (document.querySelector("#dm").getAttribute('checked') == 'true') {
+                document.getElementById("chat").disabled = false
+            } else {
+                document.getElementById("chat").disabled = chat
+            }
+        }, 1);
     }
 
-    // Placeholder vote function
-    const vote = id => {
-        socket.emit("vote", id)
-        return false;
-    }
-    
-    //Chatbox controller
-    setInterval(() => {
-        if (document.querySelector("#dm").getAttribute('checked') == 'true') {
-            document.getElementById("chat").disabled=false
-        } else {
-            document.getElementById("chat").disabled=chat
-        }
-    }, 1);
-    }
-
-// Toggle DM button attribute when clicked
+    // Toggle DM button attribute when clicked
 </script>
 
 </html>

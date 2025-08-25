@@ -8,7 +8,7 @@
 </head>
 
 <body>
-    <form method="get" action="/game">
+    <form method="get" action="/">
         <input type="text" name="id" placeholder="NAME">
         <input type="text" name="room" placeholder="ROOM">
 
@@ -30,7 +30,7 @@
 <script>
     document.getElementById("colorSelect").onchange=e=>{e.target.style.backgroundColor=e.target.value}
     document.forms[0].addEventListener("submit",e=>{
-        if (false) {
+        if (condition) {
             e.preventDefault();
         } else {
             
