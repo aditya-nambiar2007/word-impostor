@@ -16,17 +16,17 @@ const mod = {
         await client.close();
     },
 
-    insert: async (sid, odd_one, name, room) => {
+    insert: async (sid, odd_one, name, votes, room, colour) => {
         const client = await getDb();
         const dbo = client.db(dbName);
-        await dbo.collection(room).insertOne({ sid, odd_one, name });
+        await dbo.collection(room).insertOne({ sid, odd_one, name, votes ,colour});
         await client.close();
     },
 
     delete: async (sid, room) => {
         const client = await getDb();
         const dbo = client.db(dbName);
-        await dbo.collection(room).deleteOne({ sid });
+        await dbo.collection(room).deleteOne({ sid : sid});
         await client.close();
     },
 
@@ -40,7 +40,7 @@ const mod = {
     edit: async (sid, v, room) => {
         const client = await getDb();
         const dbo = client.db(dbName);
-        await dbo.collection(room).updateOne({ sid }, { $set: { odd_one: v } });
+        await dbo.collection(room).updateOne({ sid:sid }, { $set: { odd_one: v } });
         await client.close();
     },
 
@@ -52,7 +52,14 @@ const mod = {
         return new Promise((resolve, reject) => {
             result ? resolve(result) : reject(false);
         });
+    },
+
+    vote: async (sid,user,room)=>{
+        const client=await getDb();
+        const dbo=client.db(dbName);
+        dbo.collection(room).updateOne({sid:sid},{$addToSet:{votes:user}})
     }
+
 };
 
 module.exports = mod;
