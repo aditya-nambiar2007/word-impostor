@@ -11,12 +11,12 @@
 
 <body>
     <!-- Voting box, hidden by default, shown at end of round -->
-    <div class="votebox" style="display: none;justify-items: center;align-items: center;">
-        <form style="font-size: 5vh;height: fit-content;">
+    <div class="votebox" style="display: none;justify-content: center;align-items: center;">
+        <div style="color: yellowgreen;font-size: 5vh;    width: -webkit-fill-available;">VOTE THE <span style="color: red;">IMPOSTOR</span></div>
+        <form style="font-size: 4vh;height: fit-content;">
             <span></span>
             <!-- Vote button, triggers vote function on submit -->
-            <button type="submit" class="vote-button"
-                onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
+            <button type="submit" class="vote-button" onsubmit="this.disabled=true;vote(document.querySelector('input[type=radio]:checked').getAttribute('name'))">Vote</button>
         </form>
     </div>
     <!-- Main chatbox UI -->
@@ -269,8 +269,8 @@
         padding-right: 1vh;
     }
     input[type="radio"]{
-        width: 4vh;
-        height: 4vh;
+        width: 3.5vh;
+        height: 3.5vh;
     }
 </style>
 <script>
@@ -319,7 +319,7 @@
             }
             );
             document.querySelector('.dms').innerHTML = txt
-            document.querySelector('.votebox>form').innerHTML = txt.replace(/"checkbox"/ig, "\"radio\" name='radio'")
+            document.querySelector('.votebox>form').innerHTML = txt.replace(/"checkbox"/ig, "\"radio\" name='radio'")+document.querySelector('.votebox>form').innerHTML
             // Make user's own radio checked and disabled for voting
             document.getElementsByName(socket.id)[0].checked = true;
             document.getElementsByName(socket.id)[0].disabled = true;
