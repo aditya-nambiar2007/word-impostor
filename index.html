@@ -11,8 +11,8 @@
 
 <body>
     <!-- Voting box, hidden by default, shown at end of round -->
-    <div class="votebox" style="display: none;">
-        <form>
+    <div class="votebox" style="display: none;justify-items: center;align-items: center;">
+        <form style="font-size: 5vh;height: fit-content;">
             <span></span>
             <!-- Vote button, triggers vote function on submit -->
             <button type="submit" class="vote-button"
@@ -262,12 +262,22 @@
             left: 0;
         }
     }
+    form>div{
+        padding:1vh;
+    }
+    .name{
+        padding-right: 1vh;
+    }
+    input[type="radio"]{
+        width: 4vh;
+        height: 4vh;
+    }
 </style>
 <script>
 
     // Number of DMs left, chat variable (unused)
     let dms = 5
-    let chat = true
+    let chat = false
     let timeout;
     // Get parameters from URL
     const params = new URLSearchParams(location.search)
@@ -297,7 +307,7 @@
         // SOCKET.IO EVENTS
 
         // Join game room, send user and room info to server
-        socket.emit("join", { room: room, name: user })
+        socket.emit("join", { room: room, name: user,colour: colour })
 
         // Receive members list from server
         socket.on("members", m => {
@@ -305,21 +315,21 @@
             members = m;
             // Render member list for DM, and as voting options
             members.forEach(e => {
-                txt += `<div id="g${e.id}"><span class="name" >${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
+                txt += `<div id="g${e.id}"><span class="name" style="color:${e.colour}">${e.name}<input type="checkbox" name="${e.id}" style="float:right;"></div>`
             }
             );
             document.querySelector('.dms').innerHTML = txt
-            document.querySelector('.votebox>form').innerHTML = txt.replace("checkbox", "radio")
+            document.querySelector('.votebox>form').innerHTML = txt.replace(/"checkbox"/ig, "\"radio\" name='radio'")
             // Make user's own radio checked and disabled for voting
-            document.getElementsByName(socket.id)[1].checked = true;
-            document.getElementsByName(socket.id)[1].disabled = true;
+            document.getElementsByName(socket.id)[0].checked = true;
+            document.getElementsByName(socket.id)[0].disabled = true;
         })
 
         // If host, enable topic selector and add start button
         socket.on('host', () => {
             document.querySelector('select').disabled = false
             document.querySelector('.title').innerHTML += '<button id="start" onclick="this.hidden=true">START ></button>';
-            document.getElementById("start").onclick=()=>{socket.emit(`start`,document.querySelector('select').value)}
+            document.getElementById("start").onclick=()=>{socket.emit(`start`,document.querySelector('select').value);this.hidden=true}
             // Send topic changes to server
             document.querySelector('select').onchange = () => {
                 socket.emit("topic", document.querySelector('select').value)
@@ -332,13 +342,16 @@
         // Show word to impostor, or topic button
         socket.on("word", e => { if (document.getElementById('topic-display')) { document.getElementById('topic-display').innerText = e } else { document.querySelector('.title').innerHTML += `<button id="topic-display">${e}</button>` } })
         // Show voting box at end of game
-        socket.on("end", () => { document.querySelector(".votebox").display = "flex" })
+        socket.on("end", () => { console.log('end');document.querySelector(".votebox").style.display = "flex" })
         // Countdown timer handling, disables topic select during round
         socket.on("time", t => { document.querySelector(".title").innerHTML += `<div id="count"></div>`; document.querySelector('select').hidden = true; setInterval(() => { t--; document.querySelector('select').disabled = true; document.querySelector("#count").innerText = t % 60 < 10 ? `${Math.floor(t / 60)} : 0${t % 60}` : `${Math.floor(t / 60)} : ${t % 60}` }, 1000) })
+        
         //Chance system
-        socket.on("chance", t => { chat = false; timeout = setTimeout(() => { chat = true; socket.emit("chance") }, 60000) })
+
+
+        //vote system
         socket.on("votes", (votes, impostor) => {
-            votes
+            console.log(votes,impostor)
         })
         // Error handling (game start issues)
         socket.on("error", n => {
