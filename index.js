@@ -44,7 +44,6 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 
 
 let sockets = {}
-let odds = {}
 let messages = {}
 
 //Socketio initiation
@@ -72,7 +71,7 @@ io.on("connection", socket => {
         db.insert(socket.id, 0, name, [], room, colour)
         res = await db.read(room).catch(() => false)
         let members = []
-        db.read(room).then(cont => cont.forEach(e => { members.push({ id: e.sid, name: e.name ,colour:e.colour}) }))
+        db.read(room).then(cont => cont.forEach(e => { members.push({ id: e.sid, name: e.name, colour: e.colour }) }))
 
         db.read(room).then(cont => cont.forEach(e => { sockets[e.sid].emit("members", members) }))
 
@@ -87,14 +86,15 @@ io.on("connection", socket => {
     socket.on("start", async (topic) => {
         let content = await db.read(room).catch(() => false)
         if (content.length >= 3) {
-            odds[room] = content[Math.floor(Math.random() * content.length)]
-
+            let odds = content[Math.floor(Math.random() * content.length)]
+            db.edit(odds.sid, 1, room)
             let words = array_sort(topics[topic])
             //make impostor
             content.forEach(e => {
                 try {
-                    if (e == odds[room]) {
+                    if (e == odds) {
                         sockets[e.sid].emit("word", words[0])
+
                     } else {
                         sockets[e.sid].emit("word", words[1])
                     }
@@ -105,21 +105,23 @@ io.on("connection", socket => {
                 }
 
             })
-             
+
             //Game End
-            setTimeout(() => {                
+            setTimeout(() => {
                 content.forEach(e => {
-                    sockets[e.sid].emit("end"); console.log("end");
+                    sockets[e.sid].emit("end")
                 })
             }, 60000 * content.length)
 
             //Vote End
             setTimeout(() => {
-                content.forEach(e => {
+                content.forEach(async e => {
                     let votes = {}
-                    db.read(room).then(players => players.forEach(e => votes[e.sid] = e.votes.length))
-
-                    sockets[e.sid].emit("votes", votes)
+                    db.read(room).then(players => players.forEach(e => { votes[e.sid] = e.votes.length }))
+                    let imp = await db.impostor(room)
+                    sockets[e.sid].emit("votes", votes, imp)
+                    console.log(votes,imp);
+                    
                 })
             }, 60000 * content.length + 60000)
         } else {
@@ -148,6 +150,7 @@ io.on("connection", socket => {
 
     //vote handling
     socket.on("vote", id => {
+        console.log(id, socket.id, room)
         db.vote(id, socket.id, room)//votes[room][id]++ 
     })
 
