@@ -14,15 +14,12 @@ const http = require('http').createServer((req, res) => {
 
     else if (req.path == "/room") {
         let response;
-        db.read(room).then(cont => response = cont[-1])
-        try {
-            response = response != "going"
-        } catch (error) {
-            response = true
-        }
+        db.read(room,true).then(cont =>{ response = cont
         const room = url.parse(req.url, true).query["room"]
         res.writeHead(200, { 'Content-Type': "text/html" });
         res.end(response, 'utf-8');
+        }
+    )
     }
 
     else {
@@ -84,6 +81,7 @@ io.on("connection", socket => {
 
     //Start of game
     socket.on("start", async (topic) => {
+        db
         let content = await db.read(room).catch(() => false)
         if (content.length >= 3) {
             let odds = content[Math.floor(Math.random() * content.length)]
@@ -121,6 +119,7 @@ io.on("connection", socket => {
                     let imp = await db.impostor(room)
                     sockets[e.sid].emit("votes", votes, imp)
                     console.log(votes,imp);
+                    db.delete_room(room)
                     
                 })
             }, 60000 * content.length + 60000)

@@ -321,7 +321,7 @@
       let len = 0;
       let int = setInterval(() => {
         if (len < txt.length) {
-          document.querySelector(selec).innerHTML += txt.charAt(len);
+          txt.charAt(len)=='\n'?document.querySelector(selec).innerHTML+="<br>":document.querySelector(selec).innerHTML += txt.charAt(len);
           len++;
         } else {
           clearInterval(int);
@@ -453,7 +453,7 @@
         let vote = ["name", 0];
         for (key in votes) {
           let span = document.createElement("span");
-          span.innerText = vote[1];
+          span.innerText = votes[key];
           document.getElementById(key).replaceWith(span);
           if (votes[key] > vote[1]) {
             vote[0] = key;
@@ -479,7 +479,7 @@
             document.querySelector(".votebox>div").style.color = "crimson";
             type(
               ".votebox>div",
-              `YOU LOST <br>${impostor.name} WAS THE IMPOSTOR !!`,
+              `YOU LOST .... \n ${impostor.name} WAS THE IMPOSTOR !!`,
               100
             );
           }
