@@ -1,40 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-
-<body>
-    <form method="get" action="/">
-        <input type="text" name="id" placeholder="NAME">
-        <input type="text" name="room" placeholder="ROOM">
-
-        <select name="colour" id="colorSelect">
-            <option value="cyan" style="background-color: cyan; color: black;">Cyan</option>
-            <option value="coral" style="background-color: coral; color: black;">Coral</option>
-            <option value="khaki" style="background-color: khaki; color: black;">Khaki</option>
-            <option value="orchid" style="background-color: orchid; color: black;">Orchid</option>
-            <option value="gold" style="background-color: gold; color: black;">Gold</option>
-            <option value="silver" style="background-color: silver; color: black;">Silver</option>
-            <option value="lime" style="background-color: lime; color: black;">Lime</option>
-            <option value="orange" style="background-color: orange; color: black;">Orange</option>
-            <option value="magenta" style="background-color: magenta; color: black;">Magenta</option>
-            <option value="aquamarine" style="background-color: aquamarine; color: black;">Aquamarine</option>
-        </select>
-        <button type="submit">GO></button>
-    </form>
-</body>
-<script>
-    document.getElementById("colorSelect").onchange=e=>{e.target.style.backgroundColor=e.target.value}
-    document.forms[0].addEventListener("submit",e=>{
-        if (condition) {
-            e.preventDefault();
-        } else {
-            
+    <title>Join or Create a Room - Dark Mode</title>
+    <style>
+        /* General Body Styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text */
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
         }
-    })
-</script>
+
+        /* Main container for the card */
+        .main-container {
+            background-color: #1e1e1e; /* Darker card background */
+            padding: 30px 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid #2c2c2c;
+        }
+
+        /* Toggle Switch for Join/Create */
+        .form-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background-color: #2c2c2c; /* Dark toggle background */
+            border-radius: 25px;
+            overflow: hidden;
+            padding: 5px;
+        }
+
+        .form-toggle label {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            color: #aaa; /* Subdued text color */
+            font-weight: 500;
+            border-radius: 20px;
+        }
+
+        .form-toggle input[type="radio"] {
+            display: none;
+        }
+
+        .form-toggle input[type="radio"]:checked + label {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        /* Form Header */
+        .form-wrapper h2 {
+            text-align: center;
+            color: #e0e0e0; /* Light text for header */
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        /* Form Elements Styling */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #4a4a4a; /* Darker border */
+            background-color: #2d2d30; /* Dark input background */
+            color: #e0e0e0; /* Light input text */
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-group input::placeholder {
+            color: #888; /* Lighter placeholder text */
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        
+        /* Custom styled select with color feedback */
+        .color-select-wrapper select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 12px;
+            /* Updated SVG with a light stroke color */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23e0e0e0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+        }
+
+        /* Submit Button */
+        button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #0d6efd, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Toggle Switch -->
+        <div class="form-toggle">
+            <input type="radio" id="join-toggle" name="form-type" value="join" checked>
+            <label for="join-toggle">Join Room</label>
+
+            <input type="radio" id="create-toggle" name="form-type" value="create">
+            <label for="create-toggle">Create Room</label>
+        </div>
+
+        <!-- Join Room Form -->
+        <div class="form-wrapper" id="join-container">
+            <h2>Join an Existing Room</h2>
+            <form id="join-form" method="get" action="/">
+                <div class="form-group">
+                    <input type="text" name="id" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="room-code" name="room" placeholder="Enter Room Code" required>
+                </div>
+                <datalist for="room-code">
+
+                </datalist>
+
+                 <div class="form-group color-select-wrapper">
+                    <select name="colour" class="colorSelect">
+                        <option value="cyan" style="background-color: cyan; color: black;">Cyan</option>
+                        <option value="coral" style="background-color: coral; color: black;">Coral</option>
+                        <option value="khaki" style="background-color: khaki; color: black;">Khaki</option>
+                        <option value="orchid" style="background-color: orchid; color: black;">Orchid</option>
+                        <option value="gold" style="background-color: gold; color: black;">Gold</option>
+                        <option value="silver" style="background-color: silver; color: black;">Silver</option>
+                        <option value="lime" style="background-color: lime; color: black;">Lime</option>
+                        <option value="orange" style="background-color: orange; color: black;">Orange</option>
+                        <option value="magenta" style="background-color: magenta; color: black;">Magenta</option>
+                        <option value="aquamarine" style="background-color: aquamarine; color: black;">Aquamarine</option>
+                    </select>
+                </div>
+                <button type="submit">Join Room</button>
+            </form>
+        </div>
+
+        <!-- Create Room Form -->
+        <div class="form-wrapper" id="create-container" style="display: none;">
+            <h2>Create a New Room</h2>
+            <form id="create-form" method="get" action="/">
+                <div class="form-group">
+                    <input type="text" name="id" placeholder="Your Name" required>
+                </div>
+                <!-- Hidden input for room code, can be generated by JS -->
+                <div class="form-group">
+                <input name="room" id="new-room-code" required>
+                <datalist for="new-room-code">
+
+                </datalist>
+                </div>
+                <div class="form-group color-select-wrapper">
+                    <select name="colour" class="colorSelect">
+                        <option value="cyan" style="background-color: cyan; color: black;">Cyan</option>
+                        <option value="coral" style="background-color: coral; color: black;">Coral</option>
+                        <option value="khaki" style="background-color: khaki; color: black;">Khaki</option>
+                        <option value="orchid" style="background-color: orchid; color: black;">Orchid</option>
+                        <option value="gold" style="background-color: gold; color: black;">Gold</option>
+                        <option value="silver" style="background-color: silver; color: black;">Silver</option>
+                        <option value="lime" style="background-color: lime; color: black;">Lime</option>
+                        <option value="orange" style="background-color: orange; color: black;">Orange</option>
+                        <option value="magenta" style="background-color: magenta; color: black;">Magenta</option>
+                        <option value="aquamarine" style="background-color: aquamarine; color: black;">Aquamarine</option>
+                    </select>
+                </div>
+                <button type="submit">Create & Go</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // --- Toggle between Join and Create Forms ---
+            $.get('/room?type=join',data=>{
+                data.forEach(element => {$('datalist[for="room-code"]').append(`<option value="${element}">`)});
+            })
+            $.get('/room?type=rooms',data=>{
+                data.forEach(element => {$('datalist[for="room-code"]').append(`<option value="${element}">`)});
+            })
+            $('input[name="form-type"]').on('change', function() {
+                if ($(this).val() === 'join') {
+                    $('#join-container').show();
+                    $('#create-container').hide();
+                } else {
+                    $('#join-container').hide();
+                    $('#create-container').show();
+                }
+            });
+            
+            // --- Logic for Create Form to generate a room code ---
+            $('#create-form').on('submit', function() {
+            });
+
+            // --- Function to update select background color ---
+            function updateSelectBackground(selectElement) {
+                const selectedColor = $(selectElement).val();
+                $(selectElement).css('background-color', selectedColor);
+                 // Adjust text color for better contrast
+                const lightColors = ['cyan', 'khaki', 'gold', 'silver', 'lime', 'aquamarine'];
+                if (lightColors.includes(selectedColor)) {
+                    $(selectElement).css('color', 'black');
+                } else {
+                    $(selectElement).css('color', 'white');
+                }
+            }
+
+            // --- Attach change event to both color selects ---
+            $('.colorSelect').on('change', function() {
+                updateSelectBackground(this);
+            });
+
+            // --- Initialize background for both selects on page load ---
+             $('.colorSelect').each(function() {
+                updateSelectBackground(this);
+            });
+        });
+    </script>
+</body>
 </html>
+

@@ -14,12 +14,32 @@ const http = require('http').createServer((req, res) => {
 
     else if (req.path == "/room") {
         let response;
-        db.read(room,true).then(cont =>{ response = cont
-        const room = url.parse(req.url, true).query["room"]
-        res.writeHead(200, { 'Content-Type': "text/html" });
-        res.end(response, 'utf-8');
+        let q = url.parse(req.url, true).query;
+        if (q.type=="rooms") {
+            let rooms=[];
+            db.db().then(c => c.db("clients").listCollections().toArray()).then(d => {d.forEach(e=>rooms.push(e.name))})
+            response = {  room: rooms }
+            res.writeHead(200, { 'Content-Type': "application/json" });
+            res.end(JSON.stringify(response));
         }
-    )
+        else if(q.type=="join") {
+            db.db().then(c => c.db("clients").listCollections().toArray()).then(d => {
+                let rooms = [];
+                d.forEach(e => {db.room_started(e.name)?rooms.push({name:e.name}):null})
+                response = {  rooms: rooms }
+                res.writeHead(200, { 'Content-Type': "application/json" });
+                res.end(JSON.stringify(response));
+            })
+        }   
+        else if(q.type=="users"){
+            response=[]
+            for(elem in db.read(q.room)){
+                if(elem.name){
+                    response.push({name:elem.name,colour:elem.colour})
+                }
+            }
+        }
+    
     }
 
     else {
@@ -81,7 +101,7 @@ io.on("connection", socket => {
 
     //Start of game
     socket.on("start", async (topic) => {
-        db
+        db.start(room)
         let content = await db.read(room).catch(() => false)
         if (content.length >= 3) {
             let odds = content[Math.floor(Math.random() * content.length)]
