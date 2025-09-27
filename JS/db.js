@@ -1,65 +1,90 @@
 const { MongoClient } = require("mongodb");
 const url = 'mongodb://127.0.0.1:27017/';
-const dbName = "clients";
+const clientsDbName = "clients";
+const roomsDbName = "rooms";
 
-async function getDb() {
-    const client = new MongoClient(url);
-    await client.connect();
-    return client;
+let client;
+async function getClientsDb() {
+    if (!client) {
+        client = new MongoClient(url);
+        await client.connect();
+    }
+    return client.db(clientsDbName);
+}
+
+let roomsClient;
+async function getRoomsDb() {
+    if (!roomsClient) {
+        roomsClient = new MongoClient(url);
+        await roomsClient.connect();
+    }
+    return roomsClient.db(roomsDbName);
 }
 
 const mod = {
+    db: getClientsDb,
+
     create_room: async (room) => {
-        const client = await getDb();
-        const dbo = client.db(dbName);
-        await dbo.createCollection(room);
-        await client.close();
+        // Create room in clients DB
+        const clientsDb = await getClientsDb();
+        await clientsDb.createCollection(room);
+
+        // Create room in rooms DB
+        const roomsDb = await getRoomsDb();
+        await roomsDb.createCollection(room);
+        await roomsDb.collection(room).insertOne({ start: false });
+    },
+
+    start: async (room) => {
+        const roomsDb = await getRoomsDb();
+        await roomsDb.collection(room).updateOne({ start: false }, { $set: { start: true } });
+    },
+
+    room_started: async (room) => {
+        const roomsDb = await getRoomsDb();
+        const res = !!(await roomsDb.collection(room).findOne({ start: true }));
+        return res;
     },
 
     insert: async (sid, odd_one, name, votes, room, colour) => {
-        const client = await getDb();
-        const dbo = client.db(dbName);
-        await dbo.collection(room).insertOne({ sid, odd_one, name, votes ,colour});
-        await client.close();
+        const clientsDb = await getClientsDb();
+        await clientsDb.collection(room).insertOne({ sid, odd_one, name, votes, colour });
     },
 
     delete: async (sid, room) => {
-        const client = await getDb();
-        const dbo = client.db(dbName);
-        await dbo.collection(room).deleteOne({ sid : sid});
-        await client.close();
+        const clientsDb = await getClientsDb();
+        await clientsDb.collection(room).deleteOne({ sid });
     },
 
     delete_room: async (room) => {
-        const client = await getDb();
-        const dbo = client.db(dbName);
-        await dbo.dropCollection(room);
-        await client.close();
+        const clientsDb = await getClientsDb();
+        await clientsDb.dropCollection(room);
+
+        const roomsDb = await getRoomsDb();
+        await roomsDb.dropCollection(room);
     },
 
     edit: async (sid, v, room) => {
-        const client = await getDb();
-        const dbo = client.db(dbName);
-        await dbo.collection(room).updateOne({ sid:sid }, { $set: { odd_one: v } });
-        await client.close();
+        const clientsDb = await getClientsDb();
+        await clientsDb.collection(room).updateOne({ sid }, { $set: { odd_one: v } });
     },
 
     read: async (room) => {
-        const client = await getDb();
-        const dbo = client.db(dbName);
-        const result = await dbo.collection(room).find({}).toArray();
-        await client.close();
-        return new Promise((resolve, reject) => {
-            result ? resolve(result) : reject(false);
-        });
+        const clientsDb = await getClientsDb();
+        const result = await clientsDb.collection(room).find({}).toArray();
+        return result;
     },
 
-    vote: async (sid,user,room)=>{
-        const client=await getDb();
-        const dbo=client.db(dbName);
-        dbo.collection(room).updateOne({sid:sid},{$addToSet:{votes:user}})
-    }
+    vote: async (sid, user, room) => {
+        const clientsDb = await getClientsDb();
+        await clientsDb.collection(room).updateOne({ sid }, { $addToSet: { votes: user } });
+    },
 
+    impostor: async (room) => {
+        const clientsDb = await getClientsDb();
+        const result = await clientsDb.collection(room).find({ odd_one: 1 }).toArray();
+        return result;
+    }
 };
 
 module.exports = mod;
