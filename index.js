@@ -3,7 +3,8 @@ const url = require('url')
 
 
 const http = require('http').createServer((req, res) => {
-
+    console.log(req.url, req.path, req.method);
+    
     //Server Handling
     if (req.url == "/join") {
         fs.readFile("./open.html", function (error, content) {
@@ -12,18 +13,16 @@ const http = require('http').createServer((req, res) => {
         })
     }
 
-    else if (req.path == "/room") {
+    else if (req.url==='/room?type=rooms') {
         let response;
-        let q = url.parse(req.url, true).query;
-        if (q.type=="rooms") {
             let rooms=[];
-            db.db().then(c => c.db("clients").listCollections().toArray()).then(d => {d.forEach(e=>rooms.push(e.name))})
+            db.clients_db().then(c => c.listCollections().toArray()).then(d => {d.forEach(e=>rooms.push(e.name))})
             response = {  room: rooms }
             res.writeHead(200, { 'Content-Type': "application/json" });
             res.end(JSON.stringify(response));
         }
-        else if(q.type=="join") {
-            db.db().then(c => c.db("clients").listCollections().toArray()).then(d => {
+        else if(req.url=='/room?type=join') {
+            db.clients_db().then(c => c.listCollections().toArray()).then(d => {
                 let rooms = [];
                 d.forEach(e => {db.room_started(e.name)?rooms.push({name:e.name}):null})
                 response = {  rooms: rooms }
@@ -31,16 +30,19 @@ const http = require('http').createServer((req, res) => {
                 res.end(JSON.stringify(response));
             })
         }   
-        else if(q.type=="users"){
+        else if(url.parse(req.url,true).pathname=="/room"&&url.parse(req.url,true).query.room&&url.parse(req.url,true).query.type=='users'){
+            
             response=[]
-            for(elem in db.read(q.room)){
+            for(elem in db.read(url.parse(req.url,true).query.room)){
                 if(elem.name){
                     response.push({name:elem.name,colour:elem.colour})
                 }
             }
+            res.writeHead(200, { 'Content-Type': "application/json" });
+            res.end(JSON.stringify(response));
         }
     
-    }
+    
 
     else {
         fs.readFile("./index.html", function (error, content) {

@@ -3,6 +3,14 @@ const url = 'mongodb://127.0.0.1:27017/';
 const clientsDbName = "clients";
 const roomsDbName = "rooms";
 
+/* Reset databases on server start 
+const clt=new MongoClient(url)
+clt.connect()
+clt.db(clientsDbName).dropDatabase()
+clt.db(roomsDbName).dropDatabase()
+clt.close()
+/*Production code starts here*/
+
 let client;
 async function getClientsDb() {
     if (!client) {
@@ -22,8 +30,8 @@ async function getRoomsDb() {
 }
 
 const mod = {
-    db: getClientsDb,
-
+    clients_db: getClientsDb,
+    rooms_db:getRoomsDb,
     create_room: async (room) => {
         // Create room in clients DB
         const clientsDb = await getClientsDb();
